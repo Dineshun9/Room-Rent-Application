@@ -102,7 +102,10 @@ const roomRoutes = require('./routes/roomRoutes.js');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: "https://room-rent-application-1-g0md.onrender.com",
+  credentials: true,
+}));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
