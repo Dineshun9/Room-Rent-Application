@@ -16,7 +16,7 @@ const {
 
 // Protected routes (owner only)
 router.get("/my-rooms",authMiddleware,  getRoomsByOwner); 
-router.post('/',upload.array("images", 5),authMiddleware, addRoom);
+router.post('/',authMiddleware,upload.array("images", 5), addRoom);
 router.put('/:id', authMiddleware, updateRoom);
 router.delete('/:id', authMiddleware, deleteRoom);
 

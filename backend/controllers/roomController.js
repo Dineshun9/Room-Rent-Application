@@ -4,29 +4,40 @@ const Message = require("../models/Message");
 // =============================
 // Add Room (Owner Only)
 // =============================
+
 exports.addRoom = async (req, res) => {
   try {
-    const { title, description, location, rent } = req.body;
-    
+    const { title, description, location, rent, imageUrl } = req.body;
 
+    // Validate required fields
     if (!title || !description || !location || !rent) {
       return res.status(400).json({ message: 'Please fill all required fields' });
     }
 
-      // 🔹 NEW: get image URLs from Cloudinary upload
-      console.log("Files received:", req.files);
-      
-    const imageArray = req.files
+    // 🔹 Collect images
+    // 1️⃣ Images uploaded via Multer/Cloudinary
+    const uploadedImages = req.files
       ? req.files.map(file => file.path)
       : [];
-    console.log("Uploaded Images:", imageArray);
+
+    // 2️⃣ Optional image URL from frontend
+    const urlImages = imageUrl
+      ? Array.isArray(imageUrl)
+        ? imageUrl
+        : [imageUrl] // convert single URL to array
+      : [];
+
+    // Merge both sources
+    const finalImages = [...uploadedImages, ...urlImages];
+
+    // Create new room
     const newRoom = await Room.create({
       owner: req.user._id,
       title: title.trim(),
       description: description.trim(),
       location: location.trim(),
       rent: Number(rent),
-      images: imageArray
+      images: finalImages
     });
 
     res.status(201).json({
@@ -44,14 +55,38 @@ exports.addRoom = async (req, res) => {
 // =============================
 // Get All Rooms
 // =============================
+// exports.getAllRooms = async (req, res) => {
+//   try {
+//     const rooms = await Room.find().populate('owner', 'name email role');
+//     res.json(rooms);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error', error: error.message });
+//   }
+// };
+
 exports.getAllRooms = async (req, res) => {
   try {
-    const rooms = await Room.find().populate('owner', 'name email role');
-    res.json(rooms);
+    const { location } = req.query;
+
+    let filter = {};
+
+    // ✅ If location search exists, apply case-insensitive filter
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    const rooms = await Room.find(filter)
+      .populate("owner", "name email role");
+
+    res.status(200).json(rooms);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
   }
 };
+
 
 
 // =============================

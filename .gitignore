@@ -7,6 +7,7 @@ frontend/node_modules/
 
 # Environment files
 .env
+.env.local
 
 # Build folders
 frontend/build/

@@ -94,12 +94,13 @@ const { Server } = require('socket.io');
 const path = require('path');
 require('dotenv').config();
 const Message = require("./models/Message");
+const messageRoutes = require("./routes/messageRoutes");
 
 const userRoutes = require('./routes/userRoutes'); 
 const roomRoutes = require('./routes/roomRoutes.js');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -113,6 +114,7 @@ connectDB(process.env.MONGODB_URI)
 // Routes
 app.use('/api/users', userRoutes);
 app.use("/api/rooms", roomRoutes);
+app.use("/api/messages", messageRoutes);
 
 // Create server for socket.io
 const server = http.createServer(app);
@@ -124,29 +126,42 @@ const io = new Server(server, {
   }
 });
 
+const getConversationId = (roomId, userId, ownerId) => {
+  return [roomId, userId, ownerId].sort().join("_");
+};
+
 io.on("connection", (socket) => {
   console.log("New client connected:", socket.id);
 
-  socket.on("joinRoom", (roomId) => {
-    socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
-  });
+ socket.on("joinRoom", ({ roomId, userId, ownerId }) => {
+  const conversationId = getConversationId(roomId, userId, ownerId);
 
-  socket.on("sendMessage", async ({ roomId, senderId, message }) => {
-    try {
-      // Save to MongoDB
-      const savedMessage = await Message.create({ roomId, senderId, message });
+  socket.join(conversationId);
+  console.log(`Socket ${socket.id} joined ${conversationId}`);
+ });
 
-      // Broadcast to all users in the room
-      io.to(roomId).emit("receiveMessage", {
-        senderId: savedMessage.senderId,
-        message: savedMessage.message,
-        time: savedMessage.time,
-      });
-    } catch (err) {
-      console.error("Message save error:", err);
-    }
-  });
+  socket.on("sendMessage", async ({ roomId, senderId, receiverId, message }) => {
+  try {
+    const conversationId = getConversationId(roomId, senderId, receiverId);
+
+    const savedMessage = await Message.create({
+      roomId,
+      senderId,
+      receiverId,
+      message,
+      conversationId
+    });
+
+    io.to(conversationId).emit("receiveMessage", {
+      senderId: savedMessage.senderId,
+      message: savedMessage.message,
+      time: savedMessage.time,
+    });
+
+  } catch (err) {
+    console.error("Message save error:", err);
+  }
+ });
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
@@ -154,6 +169,6 @@ io.on("connection", (socket) => {
 });
 
 // ✅ Use server, not app
-server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+server.listen(PORT, () => {
+  console.log(`Server running on:${PORT}`);
 });
