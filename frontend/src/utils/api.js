@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
+// const API = axios.create({
+//   baseURL: 'http://localhost:3000/api', // backend URL
+// });
+
 const API = axios.create({
-  baseURL: 'http://localhost:3000/api', // backend URL
+  baseURL: API_URL, // backend URL
 });
 
 API.interceptors.request.use((req) => {

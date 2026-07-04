@@ -9,6 +9,7 @@ import Welcome from './pages/Welcome';
 import MyRooms from './pages/MyRooms';
 import AddRoom from './pages/AddRoom';
 import EditRoom from './pages/EditRoom';
+import ChatPage from "./pages/ChatPage";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/Edit-Room/:id" element={<EditRoom />} />
       <Route path="/my-rooms" element={<MyRooms />} />
       <Route path="/add-room" element={<AddRoom />} />
+      <Route path="/chat/:roomId" element={<ChatPage />} />
     </Routes>
   );
 }
